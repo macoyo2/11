@@ -7,7 +7,7 @@ This repo contains R scripts and an RMarkdown file used to analyze the city spor
 
 In order to run the 00-cleaning_plotting and 01-model_analysis R scripts, download the dataset in [input/data](https://github.com/macoyo2/Toronto-Sports-and-Recreation/blob/main/inputs/data/sports.csv) and save it in the project folder as "inputs/data/sports.csv".
 
-Datasheets are available to documents its motivation, composition, collection process, uses, maintainence in [/output/datasheet](https://github.com/macoyo2/Toronto-Sports-and-Recreation/blob/main/outputs/datasheet/Sports%20and%20Recreation%20Datasheet.pdf)
+Datasheets are available with the motivation, composition, collection process, uses, maintainence in [/output/datasheet](https://github.com/macoyo2/Toronto-Sports-and-Recreation/blob/main/outputs/datasheet/Sports%20and%20Recreation%20Datasheet.pdf)
 
 ## Contents
   * R scripts can be found in /scripts
