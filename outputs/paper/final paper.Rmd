@@ -1,0 +1,387 @@
+---
+title: "Sports and Recreation Participation as Associated with Seasons and Engagement Methods"
+subtitle: "A study on sports and recreation participation with City of Toronto's Open Data Portal"
+author: 
+  - Yitian Li
+thanks: "Code and data are available at: https://github.com/macoyo2/Toronto-Sports-and-Recreation."
+date: "`r format(Sys.time(), '%d %B %Y')`"
+abstract: "This report presents an analysis of sports and recreation data in Toronto as they are related to program enrollment, drop-in center usage, and permit activity by season from 2009 to 2014. The results indicate that the seasonal factors and engagement methods affect participation levels in sports and recreational activities in Toronto. The analysis consists of a factorial experiment design and regression model applied to understand the factors contributing to activity participation. The findings in this study can deliver insights into the city's activity engagement under different conditions, proposing constructive recommendations for sports and recreational program management. \\par\\textbf{Keywords:} sports and recreation activity, program enrollment, drop-in usage, permit activity, seasonal weather, participation in activity, recreation center, toronto residents, open data toronto"
+keywords: "sports and recreation activity, program enrollment, drop-in usage, permit activity, seasonal weather, participation in activity, recreation center, toronto residents, open data toronto"
+output:
+  bookdown::pdf_document2
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(kableExtra)
+library(data.table)
+library(FrF2)
+```
+
+```{r}
+raw_data <-read.csv("inputs/data/sports.csv")
+```
+
+# Introduction
+
+Sports and recreational activities play a significant role in people's life. Their various benefits include health and well-being improvement for individuals, promoting the development of physical strength, and mental empowerment. Individuals, small groups, teams, or entire communities can participate in recreational, leisure, and sporting activities appropriate for people of all ages, abilities, and skill levels. The categories of activities vary widely depending on where they live, and they tend to reflect social structures and cultural values [@1]. Especially for people with disabilities, participation in sports and recreational activities could be one of the limited opportunities for them to engage in community interactions except for their families. Thus, their active (e.g. team member of a football team) and passive (e.g. spectator at a tennis game) participation are well encouraged, and their access to any activities or facilities should be unbiased [@1].
+
+Many recreational centers in Toronto offer different engagement methods for all people through program enrollment, drop-in sessions, and permit activities with distinct types of recreational sports. Recreational sports are those in which the primary goal is participation, with the secondary goals of increased physical fitness, enjoyment, and social interaction. There are reduced standards for both performance and devotion to the sport in the recreational sphere. Therefore recreational activities are generally thought to be less demanding for participants. Theoretically, there is a clear distinction between purely recreational and competitive sports, where the priority is on achieving success and developing skills via intensive training.
+
+Participation in recreational sports could be potentially affected by environmental factors associated with seasonal weather. Such environmental variables have been identified as important determinants of health as well as factors that permit or disable people from engaging in everyday physical activity, including safety concerns, methods of transportation, and access to parks [@2]. Toronto is located north of the American continent, where the temperature cools down frequently. Although most recreational sports complexes deliver lots of indoor activities, there are many types of outdoor activities that encounter barriers during winters such as cycling and hiking. Past studies have recognised extreme temperatures, hours of daylight, snow, rain, and wind as substantial impediments to physical exercise [@3]. The adverse weather conditions for all-age individuals can explain the seasonal change in physical activity participation [@3]. In this case, the hypothesis is that the activity participation levels will be decreased in Toronto's fall and winter. Using the statistical programming language R, this study will perform factorial regression to estimate the seasonal effects on the overall participation levels. Furthermore, three participation methods are considered independent factors in the design. The assumption is that the attendances at drop-in programs are likely to occupy the most of overall participation levels.
+
+This report aims to investigate the contribution of the season and methods of participation (program enrollment, drop-in sessions, and permit activities) to the overall Toronto sports and recreation participation from the year 2009 to 2014. At first, this paper introduces an overview of the original dataset and relevant variables, providing commentary on the data collection methods in the Data section. Next, the Model section discusses the implemented factorial design method and model and their strengths and weaknesses. It contains details on the creation of experimental design by setting binomial variables. Then the Results section will deliver an interpretation of the estimated coefficients from the analysis. Lastly, the Discussion section offers insights about sports and recreational activities management and the limitations and potential future work in our study.
+
+\newpage
+
+# Data
+
+All necessary data cleaning, analysis and visualization in this report were conducted with the R statistical programming language [@r]. The package \textit{tidyverse} is used for data cleaning and manipulation [@tidy]. Tables and bar plots are generated with packages \textit{kableExtra} [@ka], \textit{ggplot2} [@gg] and \textit{ggpubr} [@br]. Model design and cube plots are created with packages \textit{data.table} [@da] and \textit{FrF2} [@fr]. The \textit{bookdown} [@b] and \textit{knitr} [@k] are applied to format the final report.
+
+The dataset is available through Toronto's Open Data Portal, and it was last refreshed on Jan 1, 2016. Toronto Parks, Forestry, and Recreation program mix consists of three components: registered, drop-in, and permit programmes. The mix's balance is dynamic and changes over seasons and years. A rise in one component could lead to a reduction in another area. Therefore, the City of Toronto consistently tracks seasonal sports and recreation program enrollment, drop-in centre usage and permit activity. These data are also reported quarterly in its Management information Dashboard report. One of the main concerns is that Parks, Forestry and Recreation data depend on multiple sources and data collection methods may not be identical from quarter to quarter. This may affect the precision of the participation number. The dataset included the records from the beginning of 2009 to the end of summer in 2015, and the Fall quarter data of 2015 is missing. In this case, we only focus on the time interval between 2009 to 2014, when four seasons' data are all available. We also did not consider the programs provided in the community center where the programs are free.
+
+## Variables
+
+Annual Participation numbers in the registered program enrollment, drop-in centre usage and permit activity are presented in four seasons (Winter, Spring, Summer, Fall). Every number is considered as one person. Noting that permit activity shows the number of bookings, one booking may include several participants; thus, its number is relatively lower than the other two components. The number scale of permit activity may lead to some deviation in our regression model. Three methods of participation were separately organized for further analysis. In each method, we obtained seasonal participation records from 2009 to 2014. We demonstrated the combined percentage of Spring and Summer participation to understand the seasonal effects better because their warm and stable weather conditions are generally considered suitable for outdoor activities: `Summer/Spring Percentage`. Similarly, the combined percentage of Fall and Winter participation was shown as the extreme and adverse weathers are more likely to occur during these two seasons, which is not friendly to outdoor activities: `Fall/Winter Percentage`.
+
+The data summary shows the previously mentioned variables in Table 1 with the total participation number. It demonstrates that participation in all sports and recreation programs was continuously booming year by year. Especially in Summer, the registered program enrollment increased by approximately 100,000 persons in 5 years. The total number of participants in both drop-in and registered programs rapidly rises. Compared to that, the total number of booking in permit activity has slower progress. Additionally, the attendance at drop-in programs is much more popular than the rest programs, with nearly 4.5 million persons using the drop-in program in 2014. Seasonal changes appear to affect the participation levels in drop-in programs and permit activities. In each year's Summer and Spring, significantly more persons are attending these programs than in Fall and Winter. More than 60% of people were booking permit activity in summer and spring every year. Also, more than 50% of people were attending drop-in programs every Summer and Spring. However, the seasonal differences are not apparent in the registered programs that people's enrollment percentage during Winter/Fall and Spring/Summer goes about fifty-fifty. In 2009, the enrollment during Winter/Fall was even higher, with nearly sixty per cent of overall participation.
+
+## Plots
+
+Each method of participation was plotted with four seasons' data from 2009 to 2014. Figure 1 shows the seasonal change in registered program enrollment. The enrollment number has a consistently increasing trend in the Fall quarter. There was a common pattern in the rest seasons that the number seemed to decrease dramatically at the end of 2009, and the participation levels remained low in the next three years. Until 2013, the enrollment number started to rise.
+
+Figure 2 demonstrates the seasonal variation of attendance at the drop-in programs. We found that the attendance number during Winter and Fall firstly increased and then dropped significantly in 2014 when the attendance number reached the minimum level. Similarly, in the Summer and Spring quarters, the rising trend seems to stop immediately with a sudden drop at the beginning of 2014. It is important to recognize that the usage of drop-in programs appears to decline year by year, especially in both Winter and Fall seasons.
+
+Figure 3 shows the seasonal difference in bookings from permit activity. In Winter and Spring, the number of bookings has decreased and reached the minimum level in 2014. Notably, in 2010 Summer, the number of bookings was the lowest among all the Summer quarters, and the 2013 Fall shows the lowest number of bookings among all the Fall quarters. 
+
+
+```{r}
+reg <- raw_data[2:7, 1:5]
+names(reg)[1] = "Year"
+names(reg)[2] = "Winter"
+names(reg)[3] = "Spring"
+names(reg)[4] = "Summer"
+names(reg)[5] = "Fall"
+
+dr <- raw_data[12:17, 1:5]
+names(dr)[1] = "Year"
+names(dr)[2] = "Winter"
+names(dr)[3] = "Spring"
+names(dr)[4] = "Summer"
+names(dr)[5] = "Fall"
+
+per <- raw_data[22:27, 1:5]
+names(per)[1] = "Year"
+names(per)[2] = "Winter"
+names(per)[3] = "Spring"
+names(per)[4] = "Summer"
+names(per)[5] = "Fall"
+
+res <- raw_data[2:28, 1:5]
+res <- res[-c(8,9,10,18,19,20), ]
+names(res)[1] = "Year"
+names(res)[2] = "Winter"
+names(res)[3] = "Spring"
+names(res)[4] = "Summer"
+names(res)[5] = "Fall"
+res <- as.data.frame(sapply(res,as.numeric))
+res$Total = rowSums(res[c(2,3,4,5)])
+res <- na.omit(res)
+res <-
+  res |>
+  mutate(`Summer/Spring Percentage` = round((Spring + Summer)/Total*100, 2)) |>
+  mutate(`Fall/Winter Percentage` = round((Winter + Fall)/Total*100, 2))
+rownames(res) <- NULL
+```
+
+
+```{r}
+kbl(res, align = "c", caption = "Sports and recreational activities participation numbers in four seasons from 2009 to 2014", booktabs = T, linesep = '') |>
+  kable_styling() |>
+  pack_rows("Registered Program Enrollment",1,6) |>
+  pack_rows("Attendance at Drop-in Programs",7,12) |>
+  pack_rows("Permit Activity - Number of Bookings",13,18)
+  
+```
+
+
+```{r, fig.cap="Registered program enrollment number in winter, spring, summer and fall", out.height="50%", out.width="50%", fig.align='center'}
+
+f1 <- 
+  reg |>
+  ggplot(aes(x=Year, y=Winter)) +
+  geom_bar(stat="identity", fill="lightblue") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Erollment Number")
+
+f2 <- 
+  reg |>
+  ggplot(aes(x=Year, y=Spring)) +
+  geom_bar(stat="identity", fill="darkgreen") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Erollment Number")
+
+f3 <- 
+  reg |>
+  ggplot(aes(x=Year, y=Summer)) +
+  geom_bar(stat="identity", fill="darkred") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Enrollment Number")
+
+f4 <- 
+  reg |>
+  ggplot(aes(x=Year, y=Fall)) +
+  geom_bar(stat="identity", fill="orange") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Erollment Number")
+
+figure <- ggarrange(f1, f2, f3, f4,
+                    labels = c("Winter", "Spring", "Summer", "Fall"),
+                    ncol = 2, nrow = 2)
+figure
+```
+
+
+
+```{r, fig.cap="Attendance at drop-in programs in winter, spring, summer and fall", out.height="50%", out.width="50%", fig.align='center'}
+
+f5 <- 
+  dr |>
+  ggplot(aes(x=Year, y=Winter)) +
+  geom_bar(stat="identity", fill="lightblue") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Attendance")
+
+f6 <- 
+  dr |>
+  ggplot(aes(x=Year, y=Spring)) +
+  geom_bar(stat="identity", fill="darkgreen") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Attendance")
+
+f7 <- 
+  dr |>
+  ggplot(aes(x=Year, y=Summer)) +
+  geom_bar(stat="identity", fill="darkred") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Attendance")
+
+f8 <- 
+  dr |>
+  ggplot(aes(x=Year, y=Fall)) +
+  geom_bar(stat="identity", fill="orange") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Attendance")
+
+figure1 <- ggarrange(f5, f6, f7, f8,
+                    labels = c("Winter", "Spring", "Summer", "Fall"),
+                    ncol = 2, nrow = 2)
+figure1
+```
+
+
+
+```{r, fig.cap="Permit activity - number of bookings in winter, spring, summer and fall", out.height="50%", out.width="50%", fig.align='center'}
+
+f9 <- 
+  per |>
+  ggplot(aes(x=Year, y=Winter)) +
+  geom_bar(stat="identity", fill="lightblue") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Number of bookings")
+
+f10 <- 
+  per |>
+  ggplot(aes(x=Year, y=Spring)) +
+  geom_bar(stat="identity", fill="darkgreen") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Number of bookings")
+
+f11 <- 
+  per |>
+  ggplot(aes(x=Year, y=Summer)) +
+  geom_bar(stat="identity", fill="darkred") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Number of bookings")
+
+f12 <- 
+  per |>
+  ggplot(aes(x=Year, y=Fall)) +
+  geom_bar(stat="identity", fill="orange") +
+  theme_classic() +
+  labs(x = "Year", 
+       y = "Number of bookings")
+
+figure2 <- ggarrange(f9, f10, f11, f12,
+                    labels = c("Winter", "Spring", "Summer", "Fall"),
+                    ncol = 2, nrow = 2)
+figure2
+```
+
+\newpage
+
+# Model
+
+As this study concerns three participation methods' effects on the participation levels, we consider the methods as three factors. Similarly, four seasons are also considered as four factors that affect the participation levels. The factorial analysis will help us study the simultaneous effects of two or more factors on the response variable. Thus, we applied two factorial regression models:
+
+$$
+Y1=\beta_0 + \beta_1R + \beta_2D + \beta_3P + \beta_4RD + \beta_5RP + \beta_6DP + \beta_7RDP
+$$
+
+The first model estimates the outcomes of participation levels $Y1$ given three predictor variables that are all binomial. $R$ variable is the registered program. $D$ variable is the drop-in programs and $P$ variable is the permit activity. $RD$, $RP$, $DP$ and $RDP$ variables represents their interaction variables. The parameter values $\beta's$ are estimated to find the main effects and interaction effects of our predictor variables.
+
+
+$$
+Y2=\beta_0 + \beta_1SS + \beta_2FW + \beta_3SS \times FW
+$$
+
+The second model estimates the outcomes of participation levels $Y2$ given two predictor variables that are both binomial. $SS$ variable represents Summer and Spring. $FW$ variable represents Winter and Fall. $SS \times FW$ variable represents their interaction variable. The parameter values $\beta's$ are estimated to find the main effects and interaction effects of our seasonal predictors.
+
+## Factorial Design
+
+```{r}
+run <- c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)
+p <- c(5326469,770231,4848638,477831,4556238,5034069,292400,200000,
+                   5574422,767006,5098539,475883,4807416,5283299,291123,210000)
+r <- c("+1","+1",-1,"+1",-1,"+1",-1,-1,"+1","+1",-1,"+1",-1,"+1",-1,-1)
+d <- c("+1",-1,"+1",-1,"+1","+1",-1,-1,"+1",-1,"+1",-1,"+1","+1",-1,-1)
+pa <- c("+1","+1","+1",-1,-1,-1,"+1",-1,"+1","+1","+1",-1,-1,-1,"+1",-1)
+fac_t <- data.frame(run,r,d,pa,p)
+names(fac_t)[1] = "Run"
+names(fac_t)[2] = "Registered Program"
+names(fac_t)[3] = "Drop-in Program"
+names(fac_t)[4] = "Permit Activity"
+names(fac_t)[5] = "Participation Number"
+kbl(fac_t, align = "c", caption = "$2^3$ factorial experiment design of participation methods", booktabs = T, linesep = '') |>
+  kable_styling() |>
+  pack_rows("Replicated Runs",9,16)
+```
+
+Factorial design is the most efficient type of experiment for studying two or more factors' effects. In this design, all potential combinations of levels of factors are explored in each replication. The main effect is that the change in the level of factors produces a change in response. Besides, when we find that the response differences between the levels of one factor are distinct from all levels of the other factor, there exists an interaction between factors. This factorial design helps us recognize the interaction effects among factors, avoiding misleading conclusions. Because when the interaction is large, the main effects will have little practical meaning.
+
+Two factorial designs have been created in our study. The first factorial design of the participation method is a $2^3$ factorial design since it has registered programs  (1st factor), drop-in programs (2nd factor) and permit activity (3rd factor), each assigned with two levels. Table 2 shows that the two levels are defined: (+1) represents the available participation method, and (-1) represents the unavailable participation method. In the first eight runs, we used our data from 2014. The outcomes of participation levels were added only by the predictors assigned with positive 1. Otherwise, the participation number in the predictors assigned with negative 1 equals 0. Then, in our replicated runs (run 9 to run 16), we performed the same method to obtain our responses but with the data in 2013. At the run with all negative 1, we set baseline participation levels of 200,000 and 210,000 persons in the replicated experiment. 
+
+The second design of seasonal factors is a $2^2$ factorial design with Summer/Spring (first factor) and Fall/Winter (second factor), each assigned with two levels. In Table 3, (+1) stands for that the seasons exist, and (-1) stands for no such seasons. In the first eight runs, we first take the average number of three participation methods in every season of 2014. Then the sums of Summer/Spring and Fall/Winter are calculated separately as our predictors' data. The outcomes of participation levels were added only by the predictors assigned with positive 1. Otherwise, the participation number in the predictors assigned with negative 1 equals 0. After, we performed the same method in our replicated runs (run 9 to run 16) to obtain our outcomes but with the data in 2013. At the run with all negative 1, we set baseline participation levels of 700,000 and 710,000 persons in the replicated experiment.
+
+```{r}
+runs <- c(1,2,3,4,5,6,7,8)
+re <- c(1742157,792074,950083,700000,
+              1858141,810529,1047612,710000)
+s <- c("+1",-1,"+1",-1,"+1",-1,"+1",-1)
+f <- c("+1","+1",-1,-1,"+1","+1",-1,-1)
+fac1_t <- data.frame(runs,s,f,re)
+names(fac1_t)[1] = "Run"
+names(fac1_t)[2] = "Summer/Spring"
+names(fac1_t)[3] = "Winter/Fall"
+names(fac1_t)[4] = "Participation Number"
+kbl(fac1_t, align = "c", caption = "$2^2$ factorial experiment design of seasonal factors", booktabs = T, linesep = '') |>
+  kable_styling() |>
+  pack_rows("Replicated Runs",5,8)
+```
+
+
+# Results
+
+From the summary of our regression model, Table 4 shows that the registered program, drop-in program and permit activity are the only significant factors at the significance level of 0.05. Table 5 shows that the Summer/Spring, Fall/Winter, and their interaction factors are all significant at the level of 0.05. To obtain the main effects and interaction effects, we need to multiply the regression coefficients by two because we set 1 and -1 as our two levels. Therefore, the main effects are 425608, 4630578 and 240512 for the registered program, drop-in program and permit activity, respectively. In addition, the main effects for the Summer/Spring and Fall/Winter are 646348 and 448802, and their interaction effect is 352500.
+
+The cube plot helps us better visualize the relationship between our factors and the participation response in Figure 4. When the registered program = 1, drop-in program = 1 and permit activity = 1, the annual participation number reaches the maximum of 5450446 persons. In contrast, When the registered program = -1, drop-in program = -1 and permit activity = -1, , the annual participation number reaches the minimum of 205000 persons.
+
+```{r}
+participation <- c(5326469,770231,4848638,477831,4556238,5034069,292400,200000,
+                   5574422,767006,5098539,475883,4807416,5283299,291123,210000)
+registered <- c(1,1,-1,1,-1,1,-1,-1,1,1,-1,1,-1,1,-1,-1)
+drop <- c(1,-1,1,-1,1,1,-1,-1,1,-1,1,-1,1,1,-1,-1)
+permit <- c(1,1,1,-1,-1,-1,1,-1,1,1,1,-1,-1,-1,1,-1)
+fac <- data.frame(participation,registered,drop,permit)
+setDT(fac)
+
+fit = lm(participation~registered*drop*permit, data = fac)
+```
+
+```{r}
+coe <- c("registered","drop","permit","registerd:drop","registered:permit","drop:permit","registered:drop:permit")
+es <- c(212804,2315289,120256,25625,25625,25625,-25625)
+pval <- c("0.000135***","1.21e-12***","0.004850**","0.435304","0.435304","0.435304","0.435304")
+es_t <- data.frame(coe,es,pval)
+names(es_t)[1] = "Coefficients"
+names(es_t)[2] = "Estimates"
+names(es_t)[3] = "P-values"
+kbl(es_t, align = "c", caption = "Summary table of factorial regression model of participation methods", booktabs = T, linesep = '') |>
+  kable_styling(full_width = F) |>
+  footnote(symbol = "*p < 0.1, **p < 0.05, ***p < 0.01")
+```
+
+```{r}
+response <- c(1742157,792074,950083,700000,
+              1858141,810529,1047612,710000)
+ss <- c(1,-1,1,-1,1,-1,1,-1)
+fw <- c(1,1,-1,-1,1,1,-1,-1)
+fac1 <- data.frame(response,ss,fw)
+setDT(fac1)
+
+fit1 <- lm(response~ss*fw, data = fac1)
+```
+
+
+```{r}
+coe1 <- c("Summer/Spring","Fall/Winter","Summer/Spring:Fall/Winter")
+es1 <- c(323174,224401,176250)
+pval1 <- c("5.97e-07***","0.000302***","0.000770***")
+es_t1 <- data.frame(coe1,es1,pval1)
+names(es_t1)[1] = "Coefficients"
+names(es_t1)[2] = "Estimates"
+names(es_t1)[3] = "P-values"
+kbl(es_t1, align = "c", caption = "Summary table of factorial regression model of seasons", booktabs = T, linesep = '') |>
+  kable_styling(full_width = F) |>
+  footnote(symbol = "*p < 0.1, **p < 0.05, ***p < 0.01")
+```
+
+
+## Main Effects and Interaction Interpretations
+
+425608: when the registered programs are available, the annual participation number will increase by 425608. This result is significant as its p-value (0.000135) is much smaller than 0.05. It also indicates that we should reject our null hypothesis, and there is strong evidence that setting registered programs can positively affect sports participation. 4630578: when the drop-in programs are available, the annual participation number will increase by 4630578. This result is significant as its p-value ($1.21\times 10^{-12}$) is much smaller than 0.05. It also shows that we should reject our null hypothesis, and there is strong evidence that setting the drop-in programs can positively affect people's participation levels. 240512: when the permit activity are available, the number will increase by 240512 persons. This result is significant as its p-value (0.004850) is smaller than 0.05. It also demonstrates that we should reject our null hypothesis, and there is strong evidence that setting the permit activity can positively affect sports participation. However, the interaction effects all have large p-values, and we fail to reject the null hypothesis. Thus, we know that the registered programs, drop-in programs and permit activity independently affect the annual participation number for sports and recreation. It is also notable that the drop-in programs resulted in much more significant main effects among all the factors, and the permit activity has the smallest main effects compared with the other two factors.
+
+646348: when we have the Summer and Spring seasons, the annual participation number will increase by 646348. This result is significant as its p-value ($5.97\times 10^{-7}$) is much smaller than 0.05. It also indicates that we should reject our null hypothesis, and there is strong evidence that the Summer and Spring seasons can positively affect sports participation. 448802: when we have Fall and Winter seasons, the annual participation number will increase by 448802. This result is significant as its p-value (0.000302) is much smaller than 0.05. It also shows that we should reject our null hypothesis, and there is strong evidence that the Fall and Winter seasons can positively affect people's participation levels. However, since the seasons are fixed and occur every year, we can not rely on the numeric results. Otherwise, the interaction effect between these two parts of seasons is also significant as the p-value (0.000770) is much smaller than 0.05. A significant and large interaction indicates that the seasonal main effects have little practical meaning. This also makes sense that the seasons exist every year, and we set the seasons to a binomial variable. Therefore, it is not practical to assume that Summer/Spring or Fall/Winter quarters do not exist in a year.
+
+
+```{r, fig.cap="Cubeplot of $2^3$ factoral regression model of participation methods", out.height="70%", out.width="70%", fig.align='center'}
+cubePlot(fit, "registered","drop","permit",main = "",cex.clab = 0.7, round = 0)
+```
+
+
+# Discussion
+
+## Findings
+
+Methods of participation in sports and recreation affect people's engagement levels in Toronto. More variety of program offerings can provide opportunities for people to join in. Statistically, we found that three major programs have independent and positive effects on the participation number through our model's results. The offering of one program can increase at least twenty thousand participants in a year. Especially for the drop-in usage, the effect is enormous that more than four million persons will participate in the programs. Due to the convenience consideration of drop-in programs, people are easier to access different kinds of recreational sports instead of making registrations or appointments. Registered and permit activities may bother workers and students that they are not able to participate in activities due to fixed schedules. Thus, drop-in usage is widespread as people can access recreational sports according to their time arrangements. A drop-in program could also deliver more social interactions with new friends. The need for social interaction is emphasized in the study of @5 that older people realize the importance of sports activities to build up a social network and stave off ageing effects. Program offerings could determine people's participation levels that some may not find sports or activities of interest. A study indicates that one of the primary reasons young people participate in sports and physical activity is enjoyment [@5]. Otherwise, older groups of people may experience difficulty in registering for specific programs. Some challenges of sports participation are identified as lacking confidence and competence in skills. Therefore, the existence of different levels of programs is important.
+
+Seasonal factor seems to have little effect on the participation levels. Although our model indicates that the warm seasons will increase participation more than the cold seasons, the result does not have practical meaning. The interaction effect between our seasonal factors indicates little influence on them. Before applying the model, we can observe the difference between seasons and people participating in more sports and recreational activities during Spring and Summer. Stable weather can promote more participation in both outdoor and indoor activities. Past research has shown that participation in commercial centers and sports clubs is associated with reduced seasonal variation [@4]. However, adverse weather conditions can occur every season and affect athletes' performance. The effects of weather on sports are varied. Firstly, the temperature has a significant impact on the performance that various heat-related illnesses may happen in high temperatures, including heat strokes and heat cramps. In opposite, very low temperatures could lead to hypothermia. Secondly, wind may intensively influence the sports activities like golf and baseball, changing the ball trajectory. The runner could also be slowed by the increased air resistance. Thirdly, visibility is essential to some sports activities and insufficient visibility may put the participants in danger. These weather factors are connected with seasonal changes. The participation levels are lowered in adverse weather because it not only reduces the performance but also potentially increases the risk of injury. Additionally, weather can also affect people's access to the activities such as transport difficulties and long distances. Therefore, we can conclude that seasons are not good predictors in the factorial model, but their practical effects on the participation are visible and still significant.
+
+Sports and recreational programs provide accessible opportunities for people of all ages and abilities, improving people's health and well beings. There are millions of people in Toronto participating sports programs in each year, and the primary source is the drop-in program. The city of Toronto may consider increasing the drop-in programs in the centers, contributing to attracting more participants. The seasonal change of weather should be emphasized so that more seasonally adapted programs could help people engage in sports activities all year. 
+
+## Limitations and Future Work
+
+There are several limitations of this study that should be discussed. First, the registered program enrollment and drop-in program usage numbers are collected as counts of persons, but the permit activity counts the number of bookings. As we mentioned in the Data section, the booking may contain different sizes of groups, which explains why the permit activity has the smallest effect on the participation number. This affects the accuracy of our model results. Secondly, while designing both our factorial experiments, we subjectively set baseline numbers of participation where all the factors are equal to negative ones. The data should reflect the participation levels without these three primary sports and recreational programs. Thus, we can not ensure the validity of the entire input data. In addition, the factorial model itself is made to study multiple continuous variables' effects on the response variable. However, the number of persons is discrete, which violates the principle of a factorial experiment. Thirdly, when we study the seasonal factors, it is not an excellent choice to make them a binomial variable since the absence of seasons makes no practical sense. Otherwise, the combinations of seasons with similar weathers are not rigorous in experiment design. We should utilize a $2^4$ factorial design to investigate four seasonal factors' effect on participation numbers. Lastly, the original runs use the data from 2014 and the replicated runs during the experiment use the data from the previous year. There is no reasonable explanation for this choice and any year's model could perform differently. Therefore, the numeric results of the main effect can not give us accurate estimates.
+
+Future work should more accurately investigate the participation methods' on the participation levels in sports and recreational activities with reliable and detailed data. Seasonal effects on sports participation should be studied separately with its responding weather conditions. Seasons seem to be a vague predictor, and investigating the effects of factors like humidity and temperature will deliver better recommendations for sports participation, avoiding unnecessary injuries.
+
+
+\newpage
+
+# References
+
